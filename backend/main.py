@@ -1,11 +1,19 @@
-import os
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
+import uvicorn
+# Load environment variables from .env at startup
+from dotenv import load_dotenv
+load_dotenv()
+import sys
+import tempfile
+from collections import OrderedDict
+from contextlib import contextmanager
+from typing import IO, Dict, Iterable, Iterator, Mapping, Optional, Tuple, Union
+
+
+# FastAPI and related imports
+from fastapi import FastAPI, HTTPException, Depends, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import List, Optional
-from dotenv import load_dotenv
-import uvicorn
 
 from auth import get_current_user, create_user, authenticate_user
 from auth import router as auth_router

@@ -86,17 +86,19 @@ function SearchSection() {
           <div className="grid gap-4">
             {results.map((project, index) => (
               <motion.div
-                key={project.id}
+                key={project.id || index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-lg font-medium text-gray-900">{project.title}</h4>
-                  <span className="text-sm text-indigo-600 font-medium">{project.similarity_score}% match</span>
+                  <h4 className="text-lg font-medium text-gray-900">{project.project_title}</h4>
+                  <span className="text-sm text-indigo-600 font-medium">
+                    {project.similarity_score ? `${project.similarity_score.toFixed(2)}% match` : ''}
+                  </span>
                 </div>
-                <p className="text-gray-600 mb-3">{project.description}</p>
+                <p className="text-gray-600 mb-3">{project.abstract}</p>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {project.technologies &&
                     project.technologies.map((tech, techIndex) => (
@@ -108,6 +110,11 @@ function SearchSection() {
                 <div className="flex justify-between items-center text-sm text-gray-500">
                   <span>Category: {project.category}</span>
                   <span>Difficulty: {project.difficulty}</span>
+                </div>
+                <div className="text-sm text-gray-700 mt-2">
+                  {project.student_name && (
+                    <span>Done by: <span className="font-semibold">{project.student_name}</span></span>
+                  )}
                 </div>
               </motion.div>
             ))}

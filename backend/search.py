@@ -2,25 +2,25 @@ from rapidfuzz import fuzz
 from utils.db import get_supabase_client
 from typing import List, Dict
 
-async def search_projects(query: str, threshold: int = 80) -> List[Dict]:
+async def search_projects(query: str, threshold: int = 60) -> List[Dict]:
     """Search projects using RapidFuzz with token_sort_ratio"""
     supabase = get_supabase_client()
     
     # Get all projects from database
-    projects_response = supabase.table("projects").select("*").execute()
+    projects_response = supabase.table("project_data").select("*").execute()
     projects = projects_response.data
     
     # Perform fuzzy search
     matching_projects = []
     
     for project in projects:
-        # Calculate similarity score
-        title_score = fuzz.token_sort_ratio(query.lower(), project['title'].lower())
-        description_score = fuzz.token_sort_ratio(query.lower(), project.get('description', '').lower())
-        
+        # Calculate similarity score using correct columns
+        title_score = fuzz.token_sort_ratio(query.lower(), project.get('project_title', '').lower())
+        abstract_score = fuzz.token_sort_ratio(query.lower(), project.get('abstract', '').lower())
+
         # Use the higher score
-        max_score = max(title_score, description_score)
-        
+        max_score = max(title_score, abstract_score)
+
         if max_score >= threshold:
             project['similarity_score'] = max_score
             matching_projects.append(project)

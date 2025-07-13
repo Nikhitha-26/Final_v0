@@ -1,58 +1,74 @@
-import subprocess
+# Gemini API call function
+async def call_gemini(prompt: str, system_prompt: str = None) -> str:
+    """Call Google Gemini Pro API (v1 endpoint)"""
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {
+        "Content-Type": "application/json"
+    }
+    # Gemini v1 expects a single user prompt in 'parts'
+    parts = []
+    if system_prompt:
+        parts.append({"text": system_prompt})
+    parts.append({"text": prompt})
+    payload = {
+        "contents": [
+            {
+                "parts": parts
+            }
+        ]
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=payload) as resp:
+            data = await resp.json()
+            if resp.status == 200 and "candidates" in data:
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            else:
+                return f"AI Agni error: {data.get('error', {}).get('message', 'Unknown error')}"
 import json
-import asyncio
+import os
+import aiohttp
 from typing import List, Dict
 
-async def call_ollama(prompt: str, model: str = "llama2") -> str:
-    """Call Ollama API via subprocess"""
-    try:
-        cmd = ["ollama", "run", model, prompt]
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        
-        stdout, stderr = await process.communicate()
-        
-        if process.returncode == 0:
-            return stdout.decode().strip()
-        else:
-            raise Exception(f"Ollama error: {stderr.decode()}")
-    except Exception as e:
-        return f"AI service temporarily unavailable: {str(e)}"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct"
+
+async def call_openrouter(prompt: str, system_prompt: str = None) -> str:
+    """Call OpenRouter API with Google: Gemma 3n 2B"""
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+    payload = {
+        "model": OPENROUTER_MODEL,
+        "messages": messages,
+        "max_tokens": 1024,
+        "temperature": 0.7
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=payload) as resp:
+            data = await resp.json()
+            if resp.status == 200 and "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            else:
+                return f"AI Agni error: {data.get('error', {}).get('message', 'Unknown error')}"
 
 async def get_project_suggestions(query: str) -> List[Dict]:
     """Get 5 project suggestions based on query"""
-    prompt = f"""
-    Based on the query "{query}", suggest 5 innovative project ideas. 
-    Format your response as a JSON array with objects containing:
-    - title: Project title
-    - description: Brief description
-    - difficulty: beginner/intermediate/advanced
-    - technologies: Array of suggested technologies
-    - estimated_time: Time to complete
-    
-    Example format:
-    [
-        {{
-            "title": "Smart Home Automation System",
-            "description": "IoT-based home automation with mobile app control",
-            "difficulty": "intermediate",
-            "technologies": ["Python", "Raspberry Pi", "React Native"],
-            "estimated_time": "4-6 weeks"
-        }}
-    ]
-    """
-    
-    response = await call_ollama(prompt)
-    
+    prompt = f"Based on the query '{query}', suggest 5 innovative project ideas. Format your response as a JSON array with objects containing: title, description, difficulty (beginner/intermediate/advanced), technologies (array), estimated_time."
+    system_prompt = "You are an expert project mentor. Always return only valid JSON as described."
+    response = await call_gemini(prompt, system_prompt)
     try:
-        # Try to parse JSON response
         suggestions = json.loads(response)
         return suggestions
-    except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
+    except Exception:
         return [
             {
                 "title": f"Project Idea for {query}",
@@ -65,93 +81,48 @@ async def get_project_suggestions(query: str) -> List[Dict]:
 
 async def get_relevant_websites(query: str) -> List[Dict]:
     """Get 5 relevant websites/platforms for the search query"""
-    prompt = f"""
-    For the query "{query}", suggest 5 real websites or platforms that would be relevant.
-    Format as JSON array with:
-    - name: Website/platform name
-    - url: Website URL
-    - description: Why it's relevant
-    - category: Type of resource
-    """
-    
-    response = await call_ollama(prompt)
-    
-    # Fallback data
-    return [
-        {
-            "name": "GitHub",
-            "url": "https://github.com",
-            "description": "Find open source projects and code examples",
-            "category": "Code Repository"
-        },
-        {
-            "name": "Stack Overflow",
-            "url": "https://stackoverflow.com",
-            "description": "Technical questions and solutions",
-            "category": "Q&A Platform"
-        }
-    ]
+    prompt = f"For the query '{query}', suggest 5 real websites or platforms that would be relevant. Format as JSON array with: name, url, description, category."
+    system_prompt = "You are a helpful assistant. Always return only valid JSON as described."
+    response = await call_gemini(prompt, system_prompt)
+    try:
+        return json.loads(response)
+    except Exception:
+        return []
 
 async def get_domain_ideas(domain: str) -> List[Dict]:
     """Get 10 new ideas based on selected domain"""
-    prompt = f"""
-    Generate 10 creative project ideas for the domain "{domain}".
-    Focus on innovative, practical projects that students can build.
-    Format as JSON array with title, description, and key_features.
-    """
-    
-    response = await call_ollama(prompt)
-    
-    # Fallback ideas
-    return [
-        {
-            "title": f"{domain} Analytics Dashboard",
-            "description": f"Real-time analytics platform for {domain}",
-            "key_features": ["Data visualization", "Real-time updates", "User management"]
-        }
-    ]
+    prompt = f"Generate 10 creative project ideas for the domain '{domain}'. Focus on innovative, practical projects that students can build. Format as JSON array with title, description, and key_features."
+    system_prompt = "You are an expert project mentor. Always return only valid JSON as described."
+    response = await call_gemini(prompt, system_prompt)
+    try:
+        return json.loads(response)
+    except Exception:
+        return []
 
 async def improve_idea(idea: str) -> Dict:
     """Suggest improvements for a project idea"""
-    prompt = f"""
-    Analyze this project idea and suggest improvements:
-    "{idea}"
-    
-    Provide suggestions for:
-    - Technical enhancements
-    - Feature additions
-    - Best practices
-    - Potential challenges and solutions
-    
-    Format as JSON with improvement categories.
-    """
-    
-    response = await call_ollama(prompt)
-    
-    return {
-        "original_idea": idea,
-        "improvements": response,
-        "technical_suggestions": [
-            "Consider using microservices architecture",
-            "Implement proper error handling",
-            "Add comprehensive testing"
-        ],
-        "feature_suggestions": [
-            "Add user authentication",
-            "Implement real-time notifications",
-            "Create mobile-responsive design"
-        ]
-    }
+    prompt = f"Analyze this project idea and suggest improvements: '{idea}'. Provide suggestions for: technical enhancements, feature additions, best practices, potential challenges and solutions. Format as JSON with keys: improvements, technical_suggestions (array), feature_suggestions (array)."
+    system_prompt = "You are an expert project reviewer. Always return only valid JSON as described."
+    response = await call_gemini(prompt, system_prompt)
+    try:
+        data = json.loads(response)
+        return {
+            "original_idea": idea,
+            "improvements": data.get("improvements", ""),
+            "technical_suggestions": data.get("technical_suggestions", []),
+            "feature_suggestions": data.get("feature_suggestions", [])
+        }
+    except Exception:
+        return {
+            "original_idea": idea,
+            "improvements": response,
+            "technical_suggestions": [],
+            "feature_suggestions": []
+        }
 
 async def chat_with_ollama(message: str) -> str:
     """Chat with Ollama for general help"""
-    prompt = f"""
-    You are a helpful assistant for a project marketplace platform.
-    User message: "{message}"
-    
-    Provide a helpful, concise response related to project development,
-    programming, or academic guidance.
-    """
-    
-    response = await call_ollama(prompt)
+    prompt = f"User message: '{message}'. Provide a helpful, concise response related to project development, programming, or academic guidance."
+    system_prompt = "You are a helpful assistant for a project marketplace platform."
+    response = await call_gemini(prompt, system_prompt)
     return response
