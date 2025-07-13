@@ -3,6 +3,12 @@ module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      colors: {
+        'reva-orange': 'hsl(var(--reva-orange))',
+        'reva-blue': 'hsl(var(--reva-blue))',
+        'reva-dark': 'hsl(var(--reva-dark))',
+        'reva-light': 'hsl(var(--reva-light))',
+      },
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.3s ease-out",

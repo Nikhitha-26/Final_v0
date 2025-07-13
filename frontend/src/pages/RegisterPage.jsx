@@ -172,14 +172,39 @@ function RegisterPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                width: '100%',
+                padding: '10px 0',
+                background: loading ? '#ffd8b0' : '#ff7300',
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 18,
+                boxShadow: '0 2px 8px #ff73001a',
+                border: 'none',
+                opacity: loading ? 0.5 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={e => { if (!loading) e.currentTarget.style.background = '#2563eb'; }}
+              onMouseOut={e => { if (!loading) e.currentTarget.style.background = '#ff7300'; }}
             >
               {loading ? <LoadingSpinner size="sm" /> : "Create Account"}
             </motion.button>
           </div>
 
           <div className="text-center">
-            <Link to="/login" className="font-medium text-purple-600 hover:text-purple-500">
+            <Link
+              to="/login"
+              style={{
+                fontWeight: 500,
+                color: '#2563eb',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+              }}
+              onMouseOver={e => (e.target.style.color = '#ff7300')}
+              onMouseOut={e => (e.target.style.color = '#2563eb')}
+            >
               Already have an account? Sign in
             </Link>
           </div>

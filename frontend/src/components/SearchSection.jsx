@@ -54,7 +54,21 @@ function SearchSection() {
           whileTap={{ scale: 0.95 }}
           onClick={handleSearch}
           disabled={loading}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            padding: '8px 24px',
+            background: loading ? '#ffd8b0' : '#ff7300',
+            color: '#fff',
+            borderRadius: 8,
+            fontWeight: 600,
+            fontSize: 16,
+            border: 'none',
+            boxShadow: '0 2px 8px #ff73001a',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1,
+            transition: 'background 0.2s',
+          }}
+          onMouseOver={e => (e.currentTarget.style.background = '#2563eb')}
+          onMouseOut={e => (e.currentTarget.style.background = '#ff7300')}
         >
           {loading ? <LoadingSpinner size="sm" /> : "Search"}
         </motion.button>

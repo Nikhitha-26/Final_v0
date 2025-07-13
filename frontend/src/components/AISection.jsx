@@ -119,7 +119,21 @@ function AISection() {
           whileTap={{ scale: 0.95 }}
           onClick={handleGetSuggestions}
           disabled={loading}
-          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+          style={{
+            padding: '12px 32px',
+            background: loading ? '#ffd8b0' : '#ff7300',
+            color: '#fff',
+            borderRadius: 12,
+            fontWeight: 600,
+            fontSize: 18,
+            border: 'none',
+            boxShadow: '0 2px 8px #ff73001a',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1,
+            transition: 'background 0.2s',
+          }}
+          onMouseOver={e => (e.currentTarget.style.background = '#2563eb')}
+          onMouseOut={e => (e.currentTarget.style.background = '#ff7300')}
         >
           {loading ? <LoadingSpinner size="sm" /> : "Get AI Suggestions"}
         </motion.button>
@@ -144,105 +158,74 @@ function AISection() {
         </nav>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "suggestions" && (
-        <div>
-          {suggestions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid gap-6 md:grid-cols-2"
-            >
-              {suggestions.map((suggestion, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{suggestion.title}</h3>
-                  <p className="text-gray-600 mb-4">{suggestion.description}</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">Difficulty:</span>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          suggestion.difficulty === "beginner"
-                            ? "bg-green-100 text-green-800"
-                            : suggestion.difficulty === "intermediate"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {suggestion.difficulty}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">Time:</span>
-                      <span className="text-sm text-gray-600">{suggestion.estimated_time}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {suggestion.technologies &&
-                        suggestion.technologies.map((tech, techIndex) => (
-                          <span key={techIndex} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            {tech}
-                          </span>
-                        ))}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </div>
-      )}
-
+      {/* Websites Tab Content */}
       {activeTab === "websites" && (
         <div>
-          <div className="mb-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleGetWebsites}
-              disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleGetWebsites}
+            disabled={loading}
+            style={{
+              padding: '8px 24px',
+              background: loading ? '#ffd8b0' : '#ff7300',
+              color: '#fff',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: 16,
+              border: 'none',
+              boxShadow: '0 2px 8px #ff73001a',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.5 : 1,
+              transition: 'background 0.2s',
+            }}
+            onMouseOver={e => (e.currentTarget.style.background = '#2563eb')}
+            onMouseOut={e => (e.currentTarget.style.background = '#ff7300')}
+          >
+            {loading ? <LoadingSpinner size="sm" /> : "Find Relevant Websites"}
+          </motion.button>
+          {websites.map((website, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
             >
-              {loading ? <LoadingSpinner size="sm" /> : "Find Relevant Websites"}
-            </motion.button>
-          </div>
-
-          {websites.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              {websites.map((website, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{website.name}</h3>
+                  <p className="text-gray-600 mb-2">{website.description}</p>
+                  <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                    {website.category}
+                  </span>
+                </div>
+                <a
+                  href={website.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '8px 24px',
+                    background: '#ff7300',
+                    color: '#fff',
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    fontSize: 16,
+                    border: 'none',
+                    boxShadow: '0 2px 8px #ff73001a',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                    textDecoration: 'none',
+                    marginLeft: 16,
+                  }}
+                  onMouseOver={e => (e.currentTarget.style.background = '#2563eb')}
+                  onMouseOut={e => (e.currentTarget.style.background = '#ff7300')}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{website.name}</h3>
-                      <p className="text-gray-600 mb-2">{website.description}</p>
-                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                        {website.category}
-                      </span>
-                    </div>
-                    <a
-                      href={website.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-4 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700"
-                    >
-                      Visit
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
+                  Visit
+                </a>
+              </div>
             </motion.div>
-          )}
+          ))}
         </div>
       )}
 
@@ -254,7 +237,21 @@ function AISection() {
               whileTap={{ scale: 0.95 }}
               onClick={() => handleGetDomainIdeas(query || "web development")}
               disabled={loading}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              style={{
+                padding: '8px 24px',
+                background: loading ? '#ffd8b0' : '#ff7300',
+                color: '#fff',
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: 16,
+                border: 'none',
+                boxShadow: '0 2px 8px #ff73001a',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={e => (e.currentTarget.style.background = '#2563eb')}
+              onMouseOut={e => (e.currentTarget.style.background = '#ff7300')}
             >
               {loading ? <LoadingSpinner size="sm" /> : "Generate Domain Ideas"}
             </motion.button>
