@@ -65,8 +65,19 @@ async def get_project_suggestions(query: str) -> List[Dict]:
     prompt = f"Based on the query '{query}', suggest 5 innovative project ideas. Format your response as a JSON array with objects containing: title, description, difficulty (beginner/intermediate/advanced), technologies (array), estimated_time."
     system_prompt = "You are an expert project mentor. Always return only valid JSON as described."
     response = await call_gemini(prompt, system_prompt)
+    import re
+    # Try to extract JSON from markdown or plain text
+    match = re.search(r'```json([\s\S]*?)```', response)
+    json_str = None
+    if match:
+        json_str = match.group(1).strip()
+    else:
+        # Try to find first [ ... ] or { ... }
+        match = re.search(r'(\[.*\]|\{.*\})', response, re.DOTALL)
+        if match:
+            json_str = match.group(1)
     try:
-        suggestions = json.loads(response)
+        suggestions = json.loads(json_str if json_str else response)
         return suggestions
     except Exception:
         return [
@@ -80,14 +91,37 @@ async def get_project_suggestions(query: str) -> List[Dict]:
         ]
 
 async def get_relevant_websites(query: str) -> List[Dict]:
-    """Get 5 relevant websites/platforms for the search query"""
-    prompt = f"For the query '{query}', suggest 5 real websites or platforms that would be relevant. Format as JSON array with: name, url, description, category."
+    """Get 5 websites that sell projects and check if they sell the queried project"""
+    prompt = (
+        f"Check the following websites: https://projectbazaar.in/, https://www.buyprojectcode.in/, https://www.pantechsolutions.net/, https://takeoffprojects.com/, https://www.projectsforyou.com/, https://www.fiverr.com/, https://www.upwork.com/, https://github.com/ and other similar platforms where students can buy, sell, or find academic/engineering projects. "
+        f"For the query '{query}', search each website and indicate if they are selling or offering this particular project or something very similar. "
+        f"For each, return: name, url (as a hyperlink if possible), description, category, and a field 'sells_project' (true/false), and a short note on match/finding. "
+        f"If you cannot find the project on a site, say so in the note. Format your response as a JSON array as described."
+    )
     system_prompt = "You are a helpful assistant. Always return only valid JSON as described."
     response = await call_gemini(prompt, system_prompt)
+    import re
+    # Try to extract JSON from markdown or plain text
+    match = re.search(r'```json([\s\S]*?)```', response)
+    json_str = None
+    if match:
+        json_str = match.group(1).strip()
+    else:
+        # Try to find first [ ... ] or { ... }
+        match = re.search(r'(\[.*\]|\{.*\})', response, re.DOTALL)
+        if match:
+            json_str = match.group(1)
     try:
-        return json.loads(response)
+        data = json.loads(json_str if json_str else response)
+        # Always return as array
+        if isinstance(data, list):
+            return data
+        elif isinstance(data, dict):
+            return [data]
+        else:
+            return [{"name": "AI Response", "description": str(data)}]
     except Exception:
-        return []
+        return [{"name": "AI Response", "description": response}]
 
 async def get_domain_ideas(domain: str) -> List[Dict]:
     """Get 10 new ideas based on selected domain"""
@@ -104,10 +138,25 @@ async def improve_idea(idea: str) -> Dict:
     prompt = f"Analyze this project idea and suggest improvements: '{idea}'. Provide suggestions for: technical enhancements, feature additions, best practices, potential challenges and solutions. Format as JSON with keys: improvements, technical_suggestions (array), feature_suggestions (array)."
     system_prompt = "You are an expert project reviewer. Always return only valid JSON as described."
     response = await call_gemini(prompt, system_prompt)
+    import re
+    match = re.search(r'```json([\s\S]*?)```', response)
+    json_str = None
+    if match:
+        json_str = match.group(1).strip()
+    else:
+        match = re.search(r'(\{.*\})', response, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+    def flatten_any_improvement(data):
+        # Recursively flatten any nested 'improvement' key
+        while isinstance(data, dict) and "improvement" in data and isinstance(data["improvement"], dict):
+            data = data["improvement"]
+        return data
     try:
-        data = json.loads(response)
+        data = json.loads(json_str if json_str else response)
+        data = flatten_any_improvement(data)
         return {
-            "original_idea": idea,
+            "original_idea": data.get("original_idea", idea),
             "improvements": data.get("improvements", ""),
             "technical_suggestions": data.get("technical_suggestions", []),
             "feature_suggestions": data.get("feature_suggestions", [])

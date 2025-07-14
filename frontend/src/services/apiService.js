@@ -3,6 +3,12 @@ import { authService } from "./authService"
 const API_BASE_URL = "http://localhost:5000/api"
 
 class ApiService {
+  async getRelevantWebsites(query) {
+    return this.makeRequest("/ai/websites", {
+      method: "POST",
+      body: JSON.stringify({ query }),
+    })
+  }
   async makeRequest(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`
     const config = {

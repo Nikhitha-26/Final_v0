@@ -17,7 +17,10 @@ from pydantic import BaseModel
 
 from auth import get_current_user, create_user, authenticate_user
 from auth import router as auth_router
-from ai_ollama import get_project_suggestions, improve_idea, chat_with_ollama
+from ai_ollama import get_project_suggestions, improve_idea, chat_with_ollama, get_relevant_websites
+class WebsiteQuery(BaseModel):
+    query: str
+# AI endpoints
 from search import search_projects
 from utils.file_handler import upload_file, download_file, get_user_files
 from utils.db import get_supabase_client
@@ -111,6 +114,15 @@ async def chat(message: ChatMessage, current_user = Depends(get_current_user)):
     try:
         response = await chat_with_ollama(message.message)
         return {"response": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Relevant Websites endpoint
+@app.post("/api/ai/websites")
+async def relevant_websites(query: WebsiteQuery, current_user = Depends(get_current_user)):
+    try:
+        websites = await get_relevant_websites(query.query)
+        return websites
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

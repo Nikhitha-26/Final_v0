@@ -362,41 +362,116 @@ function ImprovementSection() {
 
         {improvement && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 p-6 bg-gray-50 rounded-lg"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="p-6 border border-gray-200 rounded-lg hover:shadow-lg transition-shadow mt-6"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Suggestions</h3>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-wrap">{improvement.improvements}</p>
-
-              {improvement.technical_suggestions && (
-                <div className="mt-4">
-                  <h4 className="font-medium text-gray-900">Technical Suggestions:</h4>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    {improvement.technical_suggestions.map((suggestion, index) => (
-                      <li key={index} className="text-gray-700">
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            {/* Title and Description if present */}
+            {improvement.title && (
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{improvement.title}</h3>
+            )}
+            {improvement.description && (
+              <p className="text-gray-600 mb-4">{improvement.description}</p>
+            )}
+            {/* Difficulty and Estimated Time if present */}
+            <div>
+              {improvement.difficulty && (
+                <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full mr-2">
+                  {improvement.difficulty}
+                </span>
               )}
-
-              {improvement.feature_suggestions && (
-                <div className="mt-4">
-                  <h4 className="font-medium text-gray-900">Feature Suggestions:</h4>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    {improvement.feature_suggestions.map((suggestion, index) => (
-                      <li key={index} className="text-gray-700">
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+              {improvement.estimated_time && (
+                <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                  {improvement.estimated_time}
+                </span>
               )}
             </div>
-          </motion.div>
+            {/* Technologies if present */}
+            {improvement.technologies && improvement.technologies.length > 0 && (
+              <div className="mt-2">
+                <ul className="list-disc list-inside space-y-1">
+                  {improvement.technologies.map((tech, i) => (
+                    <li key={i} className="text-sm text-gray-600">{tech}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Improvements as paragraph or list */}
+            {typeof improvement.improvements === "string" && improvement.improvements.trim() ? (
+              <div className="mb-4 mt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Improvements:</h4>
+                <p className="text-gray-700 whitespace-pre-line">{improvement.improvements}</p>
+              </div>
+            ) : null}
+            {Array.isArray(improvement.improvements) && improvement.improvements.length > 0 ? (
+              <div className="mb-4 mt-4">
+                <h4 className="font-medium text-gray-900 mb-2">Improvements:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {improvement.improvements.map((item, idx) => (
+                    <li key={idx} className="text-gray-700">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {/* Technical Suggestions */}
+            {improvement.technical_suggestions && improvement.technical_suggestions.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium text-gray-900">Technical Suggestions:</h4>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  {improvement.technical_suggestions.map((suggestion, index) => (
+                    <li key={index} className="text-gray-700">
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Feature Suggestions */}
+            {improvement.feature_suggestions && improvement.feature_suggestions.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-medium text-gray-900">Feature Suggestions:</h4>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  {improvement.feature_suggestions.map((suggestion, index) => (
+                    <li key={index} className="text-gray-700">
+                      {suggestion}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* Fallback: show nested object/array in a readable format, not raw JSON */}
+            {!(typeof improvement.improvements === "string" && improvement.improvements.trim()) &&
+              !(Array.isArray(improvement.improvements) && improvement.improvements.length > 0) &&
+              !(improvement.technical_suggestions && improvement.technical_suggestions.length > 0) &&
+              !(improvement.feature_suggestions && improvement.feature_suggestions.length > 0) && improvement && (
+                <div className="mt-4">
+                  <h4 className="font-medium text-gray-900 mb-2">AI Suggestions:</h4>
+                  {Object.entries(improvement).map(([key, value]) => (
+                    <div key={key} className="mb-2">
+                      <span className="font-semibold capitalize">{key.replace(/_/g, ' ')}: </span>
+                      {typeof value === 'string' ? (
+                        <span className="text-gray-700">{value}</span>
+                      ) : Array.isArray(value) ? (
+                        <ul className="list-disc list-inside ml-4">
+                          {value.map((item, idx) => (
+                            <li key={idx} className="text-gray-700">{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                          ))}
+                        </ul>
+                      ) : typeof value === 'object' && value !== null ? (
+                        <ul className="list-disc list-inside ml-4">
+                          {Object.entries(value).map(([k, v]) => (
+                            <li key={k} className="text-gray-700"><span className="font-semibold">{k.replace(/_/g, ' ')}:</span> {typeof v === 'string' ? v : JSON.stringify(v)}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-700">{String(value)}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+        </motion.div>
         )}
       </div>
     </div>
