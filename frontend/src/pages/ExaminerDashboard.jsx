@@ -28,7 +28,8 @@ function ExaminerDashboard() {
   const fetchSubmissions = async () => {
     setLoading(true)
     try {
-      const response = await apiService.getSubmissions()
+      // Fetch from project_data table instead of files
+      const response = await apiService.makeRequest("/files/submissions")
       setSubmissions(response.files)
     } catch (error) {
       addToast(error.message, "error")
@@ -270,23 +271,24 @@ function ExaminerDashboard() {
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{submission.title}</h3>
-                              <p className="text-gray-600 mb-3">{submission.description}</p>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{submission.project_title}</h3>
+                              <p className="text-gray-600 mb-3">{submission.abstract}</p>
 
                               <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                                <div>
+                                  <span className="font-medium">Student Name:</span> {submission.student_name}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Student ID:</span> {submission.student_id}
+                                </div>
                                 <div>
                                   <span className="font-medium">Filename:</span> {submission.filename}
                                 </div>
                                 <div>
-                                  <span className="font-medium">Size:</span> {Math.round(submission.file_size / 1024)}{" "}
-                                  KB
+                                  <span className="font-medium">Size:</span> {Math.round(submission.file_size / 1024)} KB
                                 </div>
                                 <div>
-                                  <span className="font-medium">Uploaded by:</span> {submission.profiles?.username}
-                                </div>
-                                <div>
-                                  <span className="font-medium">Date:</span>{" "}
-                                  {new Date(submission.created_at).toLocaleDateString()}
+                                  <span className="font-medium">Date:</span> {submission.created_at ? new Date(submission.created_at).toLocaleDateString() : "-"}
                                 </div>
                               </div>
                             </div>

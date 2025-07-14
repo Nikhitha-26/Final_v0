@@ -8,8 +8,10 @@ import LoadingSpinner from "./LoadingSpinner"
 
 function FileUpload() {
   const [file, setFile] = useState(null)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
+  const [studentName, setStudentName] = useState("")
+  const [studentId, setStudentId] = useState("")
+  const [projectTitle, setProjectTitle] = useState("")
+  const [abstract, setAbstract] = useState("")
   const [loading, setLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const { addToast } = useToast()
@@ -48,20 +50,22 @@ function FileUpload() {
       return
     }
 
-    if (!title.trim()) {
-      addToast("Please enter a title", "warning")
+    if (!studentName.trim() || !studentId.trim() || !projectTitle.trim() || !abstract.trim()) {
+      addToast("Please fill all required fields", "warning")
       return
     }
 
     setLoading(true)
     try {
-      await apiService.uploadFile(file, title, description)
+      await apiService.uploadFile(file, studentName, studentId, projectTitle, abstract)
       addToast("File uploaded successfully!", "success")
 
       // Reset form
       setFile(null)
-      setTitle("")
-      setDescription("")
+      setStudentName("")
+      setStudentId("")
+      setProjectTitle("")
+      setAbstract("")
     } catch (error) {
       addToast(error.message, "error")
     } finally {
@@ -127,34 +131,67 @@ function FileUpload() {
           </div>
         </div>
 
-        {/* Title Input */}
+        {/* Student Name Input */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="studentName" className="block text-sm font-medium text-gray-700 mb-2">
+            Student Name *
+          </label>
+          <input
+            type="text"
+            id="studentName"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            placeholder="Enter student name"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+        </div>
+
+        {/* Student ID Input */}
+        <div>
+          <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
+            Student ID *
+          </label>
+          <input
+            type="text"
+            id="studentId"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value)}
+            placeholder="Enter student ID"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+        </div>
+
+        {/* Project Title Input */}
+        <div>
+          <label htmlFor="projectTitle" className="block text-sm font-medium text-gray-700 mb-2">
             Project Title *
           </label>
           <input
             type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            id="projectTitle"
+            value={projectTitle}
+            onChange={(e) => setProjectTitle(e.target.value)}
             placeholder="Enter project title"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             required
           />
         </div>
 
-        {/* Description Input */}
+        {/* Abstract Input */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description
+          <label htmlFor="abstract" className="block text-sm font-medium text-gray-700 mb-2">
+            Abstract *
           </label>
           <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter project description (optional)"
+            id="abstract"
+            value={abstract}
+            onChange={(e) => setAbstract(e.target.value)}
+            placeholder="Enter project abstract"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             rows={4}
+            required
           />
         </div>
 

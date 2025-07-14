@@ -61,11 +61,13 @@ class ApiService {
   }
 
   // File endpoints
-  async uploadFile(file, title, description) {
+  async uploadFile(file, studentName, studentId, projectTitle, abstract) {
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("title", title)
-    formData.append("description", description)
+    formData.append("student_name", studentName)
+    formData.append("student_id", studentId)
+    formData.append("project_title", projectTitle)
+    formData.append("abstract", abstract)
 
     return this.makeRequest("/files/upload", {
       method: "POST",

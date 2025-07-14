@@ -130,17 +130,43 @@ async def relevant_websites(query: WebsiteQuery, current_user = Depends(get_curr
 @app.post("/api/files/upload")
 async def upload_project_file(
     file: UploadFile = File(...),
-    title: str = Form(...),
-    description: str = Form(...),
+    student_name: str = Form(...),
+    student_id: str = Form(...),
+    project_title: str = Form(...),
+    abstract: str = Form(...),
     current_user = Depends(get_current_user)
 ):
     try:
         # Check if user is teacher
         if current_user.get('role') != 'teacher':
             raise HTTPException(status_code=403, detail="Only teachers can upload files")
-        
-        result = await upload_file(file, title, description, current_user['id'])
-        return {"message": "File uploaded successfully", "file": result}
+
+        supabase = get_supabase_client()
+        import os, uuid
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_content = await file.read()
+        storage_response = supabase.storage.from_("project-files").upload(
+            unique_filename,
+            file_content,
+            file_options={"content-type": file.content_type}
+        )
+        if storage_response.data:
+            project_data = {
+                "student_name": student_name,
+                "student_id": student_id,
+                "project_title": project_title,
+                "abstract": abstract,
+                "file_path": unique_filename,
+                "file_size": len(file_content),
+                "mime_type": file.content_type,
+                "uploaded_by": current_user['id'],
+                "filename": file.filename
+            }
+            db_response = supabase.table("project_data").insert(project_data).execute()
+            if db_response.data:
+                return {"message": "File uploaded successfully", "file": db_response.data[0]}
+        raise Exception("Failed to upload file")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
