@@ -1,5 +1,5 @@
 from rapidfuzz import fuzz
-from utils.db import get_supabase_client
+from utils.supabase_client import get_supabase_client
 from typing import List, Dict
 
 async def search_projects(query: str, threshold: int = 60) -> List[Dict]:

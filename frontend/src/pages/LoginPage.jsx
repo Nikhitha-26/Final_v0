@@ -64,7 +64,7 @@ function LoginPage() {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <img src="/reva-logo.jpg" alt="REVA University Logo" style={{ height: 56, marginBottom: 8 }} />
+          <img src="/REVAUniversitylogo.png" alt="REVA University Logo" style={{ height: 56, marginBottom: 8 }} />
           <motion.h2
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

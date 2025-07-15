@@ -86,11 +86,11 @@ function TeacherDashboard() {
             {/* Centered Title */}
             <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: '#ff7300', textAlign: 'center', margin: 0 }}>Teacher Dashboard</h1>
-              <p style={{ fontSize: 15, color: '#23272f', textAlign: 'center', margin: 0 }}>Welcome back, {user?.username}!</p>
+              <p style={{ fontSize: 15, color: '#23272f', textAlign: 'center', margin: 0 }}>Welcome back, {user?.name}!</p>
             </div>
             {/* Right: Logo and Logout */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: 'auto' }}>
-              <img src="/reva-logo.jpg" alt="REVA University Logo" style={{ width: 64, marginBottom: 8 }} />
+              <img src="/REVAUniversitylogo.png" alt="REVA University Logo" style={{ width: 64, marginBottom: 8 }} />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -170,7 +170,7 @@ function TeacherDashboard() {
           {sidebarOpen && (
             <div style={{ background: '#fff', height: '100%', boxShadow: '0 2px 8px #ff73001a', padding: 8, borderRadius: '0 12px 12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'absolute', top: 0, left: 0, width: 256 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
-                <img src="/reva-logo.jpg" alt="REVA University Logo" style={{ width: 40, marginBottom: 16, opacity: 1, transition: 'all 0.3s' }} />
+                <img src="/REVAUniversitylogo.png" alt="REVA University Logo" style={{ width: 40, marginBottom: 16, opacity: 1, transition: 'all 0.3s' }} />
                 <h2 style={{ fontSize: 18, fontWeight: 600, color: '#2563eb', marginBottom: 16, opacity: 1, transition: 'all 0.3s' }}>Menu</h2>
               </div>
               <nav style={{ marginTop: 16, width: '100%' }}>

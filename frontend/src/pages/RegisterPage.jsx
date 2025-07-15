@@ -1,15 +1,12 @@
-"use client"
-
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { motion } from "framer-motion"
 import { useAuth } from "../hooks/useAuth"
 import { useToast } from "../hooks/useToast"
 import LoadingSpinner from "../components/LoadingSpinner"
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
-    username: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -17,7 +14,7 @@ function RegisterPage() {
   })
   const [loading, setLoading] = useState(false)
 
-  const { register } = useAuth()
+  const { register,login } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
 
@@ -30,18 +27,20 @@ function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (formData.password !== formData.confirmPassword) {
       addToast("Passwords do not match", "error")
       return
     }
-
     setLoading(true)
-
     try {
-      await register(formData.username, formData.email, formData.password, formData.role)
-      addToast("Registration successful! Please login.", "success")
-      navigate("/login")
+      try {
+  await register(formData.fullName, formData.email, formData.password, formData.role)
+  await login(formData.email, formData.password)
+  addToast("Registered and logged in successfully!", "success")
+  navigate("/dashboard") // or wherever your post-login page is
+} catch (error) {
+  addToast(error.message || "Something went wrong", "error")
+}
     } catch (error) {
       addToast(error.message, "error")
     } finally {
@@ -50,167 +49,122 @@ function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-md w-full space-y-8"
-      >
-        <div>
-          <motion.h2
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 text-center text-3xl font-extrabold text-gray-900"
-          >
-            Create Account
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-2 text-center text-sm text-gray-600"
-          >
-            Join the Project Marketplace
-          </motion.p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#faf9f6] py-12 px-4">
+      <div className="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-10 ">
+        <div className="flex flex-col items-center mb-8">
+  <img
+    src="/REVAUniversitylogo.png"
+    alt="REVA University Logo"
+    className="h-14 mb-2 mx-auto"
+  />
+  <h1 className="text-2xl font-semibold text-[#e87722] text-center">Join UniProject Hub</h1>
+</div>
 
-        <motion.form
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 space-y-6"
-          onSubmit={handleSubmit}
-        >
-          <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-[#e87722] text-center mb-6">Create Account</h2>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="flex flex-col md:flex-row gap-4 mb-4 justify-center">
+            <RoleCard
+              label="Student"
+              value="student"
+              active={formData.role === "student"}
+              onClick={() => setFormData({ ...formData, role: "student" })}
+              icon="🎓"
+            />
+            <RoleCard
+              label="Guide/Teacher"
+              value="teacher"
+              active={formData.role === "teacher"}
+              onClick={() => setFormData({ ...formData, role: "teacher" })}
+              icon="👩‍🏫"
+            />
+            <RoleCard
+              label="Examiner"
+              value="examiner"
+              active={formData.role === "examiner"}
+              onClick={() => setFormData({ ...formData, role: "examiner" })}
+              icon="🧑‍💼"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
+              <label className="block text-gray-700 font-medium mb-1">Full Name *</label>
               <input
-                id="username"
-                name="username"
                 type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter username"
-                value={formData.username}
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleChange}
+                required
+                placeholder="Enter your full name"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e87722] focus:ring-2 focus:ring-[#e87722]/30 bg-gray-50"
               />
             </div>
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
+              <label className="block text-gray-700 font-medium mb-1">Email Address *</label>
               <input
-                id="email"
-                name="email"
                 type="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter email"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
+                required
+                placeholder="Enter your email"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e87722] focus:ring-2 focus:ring-[#e87722]/30 bg-gray-50"
               />
             </div>
-
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="examiner">Examiner</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label className="block text-gray-700 font-medium mb-1">Password *</label>
               <input
-                id="password"
-                name="password"
                 type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter password"
+                name="password"
                 value={formData.password}
                 onChange={handleChange}
+                required
+                placeholder="Create a password"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e87722] focus:ring-2 focus:ring-[#e87722]/30 bg-gray-50"
               />
             </div>
-
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+              <label className="block text-gray-700 font-medium mb-1">Confirm Password *</label>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
                 type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Confirm password"
+                name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                required
+                placeholder="Confirm your password"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-[#e87722] focus:ring-2 focus:ring-[#e87722]/30 bg-gray-50"
               />
             </div>
           </div>
-
-          <div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px 0',
-                background: loading ? '#ffd8b0' : '#ff7300',
-                color: '#fff',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 18,
-                boxShadow: '0 2px 8px #ff73001a',
-                border: 'none',
-                opacity: loading ? 0.5 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s',
-              }}
-              onMouseOver={e => { if (!loading) e.currentTarget.style.background = '#2563eb'; }}
-              onMouseOut={e => { if (!loading) e.currentTarget.style.background = '#ff7300'; }}
-            >
-              {loading ? <LoadingSpinner size="sm" /> : "Create Account"}
-            </motion.button>
-          </div>
-
-          <div className="text-center">
-            <Link
-              to="/login"
-              style={{
-                fontWeight: 500,
-                color: '#2563eb',
-                textDecoration: 'none',
-                transition: 'color 0.2s',
-              }}
-              onMouseOver={e => (e.target.style.color = '#ff7300')}
-              onMouseOut={e => (e.target.style.color = '#2563eb')}
-            >
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-lg bg-[#e87722] text-white font-semibold text-lg hover:bg-[#d96a1c] transition disabled:opacity-50"
+          >
+            {loading ? <LoadingSpinner size={20} /> : "Create Account"}
+          </button>
+          <div className="mt-4 text-center">
+            <Link to="/login" className="text-[#e87722] hover:underline font-medium">
               Already have an account? Sign in
             </Link>
           </div>
-        </motion.form>
-      </motion.div>
+        </form>
+      </div>
     </div>
+  )
+}
+
+function RoleCard({ label, value, active, onClick, icon }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center px-6 py-4 rounded-xl border border-1 transition-all duration-150 font-semibold text-lg shadow-sm hover:shadow-lg focus:outline-none ${
+        active ? "border-#fadbc3 bg-[#faeade] text-[#e87722]" : "border-gray-300 bg-white text-gray-700"
+      }`}
+    >
+      <span className="text-3xl mb-2">{icon}</span>
+      {label}
+    </button>
   )
 }
 

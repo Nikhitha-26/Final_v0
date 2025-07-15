@@ -39,36 +39,55 @@ export function AuthProvider({ children }) {
     try {
       const response = await authService.login(email, password)
 
-      localStorage.setItem("access_token", response.user.access_token)
-      localStorage.setItem("user_data", JSON.stringify(response.user))
-
-      setUser(response.user)
+      // Support both {access_token, user} and {user: {access_token, ...}}
+      let token = response.access_token || (response.user && response.user.access_token)
+      let userObj = response.user || response
+      if (token) {
+        localStorage.setItem("access_token", token)
+      }
+      if (userObj) {
+        localStorage.setItem("user_data", JSON.stringify(userObj))
+        setUser(userObj)
+      }
       return response
     } catch (error) {
       throw error
     }
   }
 
-  const register = async (username, email, password, role) => {
-    try {
-      const response = await authService.register(username, email, password, role)
-      return response
-    } catch (error) {
-      throw error
-    }
-  }
+  const register = async (name, email, password, role) => {
+  try {
+    const response = await authService.register(name, email, password, role)
 
-  const logout = async () => {
-    try {
-      await authService.logout()
-    } catch (error) {
-      console.error("Logout error:", error)
-    } finally {
-      localStorage.removeItem("access_token")
-      localStorage.removeItem("user_data")
-      setUser(null)
+    const token = response.access_token || (response.user && response.user.access_token)
+    const userObj = response.user || response
+
+    if (token) {
+      localStorage.setItem("access_token", token)
     }
+    if (userObj) {
+      localStorage.setItem("user_data", JSON.stringify(userObj))
+      setUser(userObj)
+    }
+
+    return response
+  } catch (error) {
+    throw error
   }
+}
+
+const logout = async () => {
+  try {
+    await authService.logout()
+  } catch (error) {
+    console.error("Logout error:", error)
+  } finally {
+    localStorage.removeItem("access_token")
+    localStorage.removeItem("user_data")
+    setUser(null)
+  }
+}
+
 
   const value = {
     user,

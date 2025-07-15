@@ -28,8 +28,7 @@ function ExaminerDashboard() {
   const fetchSubmissions = async () => {
     setLoading(true)
     try {
-      // Fetch from project_data table instead of files
-      const response = await apiService.makeRequest("/files/submissions")
+      const response = await apiService.getSubmissions()
       setSubmissions(response.files)
     } catch (error) {
       addToast(error.message, "error")
@@ -38,9 +37,26 @@ function ExaminerDashboard() {
     }
   }
 
-  const handleDownload = async (fileId, filename) => {
+  const handleDownload = async (fileId, filename, fileUrl) => {
     try {
-      const blob = await apiService.downloadFile(fileId)
+      // Try by id first
+      let blob = null
+      try {
+        blob = await apiService.downloadFile(fileId)
+      } catch (err) {
+        // If 404, try by file_url
+        if (fileUrl) {
+          try {
+            blob = await apiService.downloadFile(fileUrl)
+          } catch (err2) {
+            addToast("Download failed by both id and file_url", "error")
+            return
+          }
+        } else {
+          addToast("Download failed: file not found", "error")
+          return
+        }
+      }
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.style.display = "none"
@@ -121,11 +137,11 @@ function ExaminerDashboard() {
             {/* Centered Title */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center w-full">
               <h1 className="text-2xl font-bold text-reva-orange text-center">Examiner Dashboard</h1>
-              <p className="text-sm text-reva-dark text-center">Welcome back, {user?.username}!</p>
+              <p className="text-sm text-reva-dark text-center">Welcome back, {user?.name}!</p>
             </div>
             {/* Right: Logo and Logout */}
             <div className="flex flex-col items-center ml-auto">
-              <img src="/reva-logo.jpg" alt="REVA University Logo" className="w-16 mb-2" />
+              <img src="/REVAUniversitylogo.png" alt="REVA University Logo" className="w-16 mb-2" />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -198,7 +214,7 @@ function ExaminerDashboard() {
           {sidebarOpen && (
             <div className={`bg-white h-full shadow-sm p-2 rounded-r-lg flex flex-col items-center absolute top-0 left-0 w-64`}>
               <div className="flex flex-col items-center mt-8">
-                <img src="/reva-logo.jpg" alt="REVA University Logo" className="w-10 mb-4 transition-all duration-300 opacity-100" />
+                <img src="/REVAUniversitylogo.png" alt="REVA University Logo" className="w-10 mb-4 transition-all duration-300 opacity-100" />
                 <h2 className="text-lg font-semibold text-reva-blue mb-4 transition-all duration-300 opacity-100">Menu</h2>
               </div>
               <nav className="space-y-2 mt-4 w-full">
@@ -272,9 +288,12 @@ function ExaminerDashboard() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <h3 className="text-lg font-semibold text-gray-900 mb-2">{submission.project_title}</h3>
-                              <p className="text-gray-600 mb-3">{submission.abstract}</p>
+                              <p className="text-gray-600 mb-3"><span className="font-medium">Abstract:</span> {submission.abstract}</p>
 
                               <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                                <div>
+                                  <span className="font-medium">Filename:</span> {submission.file_url ? submission.file_url : "-"}
+                                </div>
                                 <div>
                                   <span className="font-medium">Student Name:</span> {submission.student_name}
                                 </div>
@@ -282,10 +301,7 @@ function ExaminerDashboard() {
                                   <span className="font-medium">Student ID:</span> {submission.student_id}
                                 </div>
                                 <div>
-                                  <span className="font-medium">Filename:</span> {submission.filename}
-                                </div>
-                                <div>
-                                  <span className="font-medium">Size:</span> {Math.round(submission.file_size / 1024)} KB
+                                  <span className="font-medium">Uploaded by:</span> {submission.uploaded_by}
                                 </div>
                                 <div>
                                   <span className="font-medium">Date:</span> {submission.created_at ? new Date(submission.created_at).toLocaleDateString() : "-"}
@@ -296,7 +312,14 @@ function ExaminerDashboard() {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => handleDownload(submission.id, submission.filename)}
+                              onClick={() => {
+                                if (!submission.id) {
+                                  console.error('Download error: submission.id is undefined', submission)
+                                  addToast('Download failed: file ID is missing', 'error')
+                                  return
+                                }
+                                handleDownload(submission.id, submission.file_url || "file", submission.file_url)
+                              }}
                               style={{
                                 marginLeft: 16,
                                 padding: '8px 24px',

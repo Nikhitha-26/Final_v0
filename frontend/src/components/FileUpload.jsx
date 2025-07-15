@@ -8,9 +8,10 @@ import LoadingSpinner from "./LoadingSpinner"
 
 function FileUpload() {
   const [file, setFile] = useState(null)
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
   const [studentName, setStudentName] = useState("")
   const [studentId, setStudentId] = useState("")
-  const [projectTitle, setProjectTitle] = useState("")
   const [abstract, setAbstract] = useState("")
   const [loading, setLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -49,22 +50,32 @@ function FileUpload() {
       addToast("Please select a file", "warning")
       return
     }
-
-    if (!studentName.trim() || !studentId.trim() || !projectTitle.trim() || !abstract.trim()) {
-      addToast("Please fill all required fields", "warning")
+    if (!title.trim()) {
+      addToast("Please enter a project title", "warning")
       return
     }
-
+    if (!studentName.trim()) {
+      addToast("Please enter student name", "warning")
+      return
+    }
+    if (!studentId.trim()) {
+      addToast("Please enter student ID", "warning")
+      return
+    }
+    if (!abstract.trim()) {
+      addToast("Please enter project abstract", "warning")
+      return
+    }
     setLoading(true)
     try {
-      await apiService.uploadFile(file, studentName, studentId, projectTitle, abstract)
+      await apiService.uploadFile(file, title, description, studentName, studentId, abstract)
       addToast("File uploaded successfully!", "success")
-
       // Reset form
       setFile(null)
+      setTitle("")
+      setDescription("")
       setStudentName("")
       setStudentId("")
-      setProjectTitle("")
       setAbstract("")
     } catch (error) {
       addToast(error.message, "error")
@@ -146,7 +157,6 @@ function FileUpload() {
             required
           />
         </div>
-
         {/* Student ID Input */}
         <div>
           <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
@@ -162,27 +172,25 @@ function FileUpload() {
             required
           />
         </div>
-
         {/* Project Title Input */}
         <div>
-          <label htmlFor="projectTitle" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Project Title *
           </label>
           <input
             type="text"
-            id="projectTitle"
-            value={projectTitle}
-            onChange={(e) => setProjectTitle(e.target.value)}
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter project title"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             required
           />
         </div>
-
         {/* Abstract Input */}
         <div>
           <label htmlFor="abstract" className="block text-sm font-medium text-gray-700 mb-2">
-            Abstract *
+            Project Abstract *
           </label>
           <textarea
             id="abstract"
@@ -190,8 +198,22 @@ function FileUpload() {
             onChange={(e) => setAbstract(e.target.value)}
             placeholder="Enter project abstract"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            rows={4}
+            rows={3}
             required
+          />
+        </div>
+        {/* Description Input */}
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter project description (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            rows={4}
           />
         </div>
 

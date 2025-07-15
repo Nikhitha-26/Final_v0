@@ -1,79 +1,97 @@
-from supabase import create_client, Client
-import os
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Body, APIRouter, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import jwt
-from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Body
-from utils.supabase_client import supabase
+from starlette.status import HTTP_401_UNAUTHORIZED
+from fastapi.security.utils import get_authorization_scheme_param
+from datetime import datetime
+from utils.supabase_client import get_supabase_client
+import logging
+
+from pydantic import BaseModel
+import asyncio
+import time
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str
+
 
 router = APIRouter()
 
 @router.post("/register")
-def register_user(email: str = Body(...), password: str = Body(...), role: str = Body(...)):
+async def register_user(data: RegisterRequest):
     try:
-        result = supabase.auth.sign_up({
-            "email": email,
-            "password": password
-        })
-        # Add role info to custom table
-        supabase.table("users").insert({
-            "email": email,
-            "role": role
-        }).execute()
-
-        return {"message": "User registered", "user": result.user.email}
+        user = await create_user(
+            email=data.email,
+            password=data.password,
+            name=data.name,
+            role=data.role,
+        )
+        return {"message": "User registered", "user": user}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.post("/login")
 def login_user(email: str = Body(...), password: str = Body(...)):
     try:
+        supabase = get_supabase_client()
         result = supabase.auth.sign_in_with_password({
             "email": email,
             "password": password
         })
         return {"access_token": result.session.access_token, "user": result.user.email}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print("LOGIN ERROR:", str(e))  # Now this will show up in terminal logs
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
 
 security = HTTPBearer()
 
-def get_supabase_client() -> Client:
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_ANON_KEY")
-    return create_client(url, key)
 
-async def create_user(email: str, password: str, username: str, role: str):
+
+
+
+
+async def create_user(email: str, password: str, name: str, role: str):
     supabase = get_supabase_client()
-    
-    # Create user in Supabase Auth
+
+    # Step 1: Create user in Supabase Auth
     auth_response = supabase.auth.sign_up({
         "email": email,
         "password": password
     })
-    
-    if auth_response.user:
-        # Insert user profile
-        profile_data = {
-            "id": auth_response.user.id,
-            "username": username,
-            "email": email,
-            "role": role,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        
-        supabase.table("profiles").insert(profile_data).execute()
-        
-        return {
-            "id": auth_response.user.id,
-            "email": email,
-            "username": username,
-            "role": role
-        }
-    else:
-        raise Exception("Failed to create user")
+
+    if not auth_response.user:
+        raise Exception("Failed to create user in Supabase Auth")
+
+    user_id = auth_response.user.id
+
+    # Step 2: Retry insert into profiles with up to 5 attempts
+    profile_data = {
+        "id": user_id,
+        "name": name,
+        "email": email,
+        "role": role,
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            supabase.table("profiles").insert(profile_data).execute()
+            return {
+                "id": user_id,
+                "email": email,
+                "name": name,
+                "role": role
+            }
+        except Exception as e:
+            print(f"Retry {i+1}/5: Supabase user not synced yet. Waiting...")
+            await asyncio.sleep(2)
+
+    raise Exception("Failed to insert user profile after multiple retries")
+
 
 async def authenticate_user(email: str, password: str):
     supabase = get_supabase_client()
@@ -93,7 +111,7 @@ async def authenticate_user(email: str, password: str):
             return {
                 "id": user_data["id"],
                 "email": user_data["email"],
-                "username": user_data["username"],
+                "name": user_data["name"],
                 "role": user_data["role"],
                 "access_token": auth_response.session.access_token
             }
@@ -102,18 +120,45 @@ async def authenticate_user(email: str, password: str):
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
+        token = None
+        # Try to get token from Depends(security) (works for JSON requests)
+        if credentials and hasattr(credentials, 'credentials') and credentials.credentials:
+            token = credentials.credentials
+        else:
+            # Fallback: extract from request headers (for multipart/form-data)
+            import inspect
+            frame = inspect.currentframe()
+            request = None
+            while frame:
+                if 'request' in frame.f_locals:
+                    request = frame.f_locals['request']
+                    break
+                frame = frame.f_back
+            # If not found, raise a clear error
+            if not request:
+                logging.error("Request object not found in call stack for get_current_user.")
+                raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Request object not found for authentication.")
+            auth_header = request.headers.get('authorization')
+            scheme, param = get_authorization_scheme_param(auth_header)
+            if scheme and scheme.lower() == 'bearer' and param:
+                token = param
+        if not token:
+            logging.warning("No Authorization token found in request headers.")
+            raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Not authenticated: Bearer token missing.")
         supabase = get_supabase_client()
-        
-        # Verify token with Supabase
-        user_response = supabase.auth.get_user(credentials.credentials)
-        
+        user_response = supabase.auth.get_user(token)
         if user_response.user:
             # Get user profile
             profile = supabase.table("profiles").select("*").eq("id", user_response.user.id).execute()
-            
             if profile.data:
                 return profile.data[0]
-        
-        raise HTTPException(status_code=401, detail="Invalid token")
+            else:
+                logging.error(f"User profile not found for id: {user_response.user.id}")
+        else:
+            logging.error("Supabase could not validate user from token.")
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        logging.exception(f"Error in get_current_user: {e}")
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=f"Authentication failed: {str(e)}")

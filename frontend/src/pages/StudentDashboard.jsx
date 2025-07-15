@@ -89,11 +89,11 @@ function StudentDashboard() {
             {/* Centered Title */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center w-full">
               <h1 className="text-2xl font-bold text-reva-orange text-center">Student Dashboard</h1>
-              <p className="text-sm text-reva-dark text-center">Welcome back, {user?.username}!</p>
+              <p className="text-sm text-reva-dark text-center">Welcome back, {user?.name}!</p>
             </div>
             {/* Right: Logo and Logout */}
             <div className="flex flex-col items-center ml-auto">
-              <img src="/reva-logo.jpg" alt="REVA University Logo" style={{ width: 64, marginBottom: 8 }} />
+              <img src="/REVAUniversitylogo.png" alt="REVA University Logo" style={{ width: 64, marginBottom: 8 }} />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -164,7 +164,7 @@ function StudentDashboard() {
           {sidebarOpen && (
             <div className={`bg-white h-full shadow-sm p-2 rounded-r-lg flex flex-col items-center absolute top-0 left-0 w-64`}>
               <div className="flex flex-col items-center mt-8">
-                <img src="/reva-logo.jpg" alt="REVA University Logo" className="w-10 mb-4 transition-all duration-300 opacity-100" />
+                <img src="/REVAUniversitylogo.png" alt="REVA University Logo" className="w-10 mb-4 transition-all duration-300 opacity-100" />
                 <h2 className="text-lg font-semibold text-reva-blue mb-4 transition-all duration-300 opacity-100">Menu</h2>
               </div>
               <nav className="space-y-2 mt-4 w-full">

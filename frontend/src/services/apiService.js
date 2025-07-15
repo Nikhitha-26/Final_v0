@@ -3,14 +3,10 @@ import { authService } from "./authService"
 const API_BASE_URL = "http://localhost:5000/api"
 
 class ApiService {
-  async getRelevantWebsites(query) {
-    return this.makeRequest("/ai/websites", {
-      method: "POST",
-      body: JSON.stringify({ query }),
-    })
-  }
+  // General POST request wrapper
   async makeRequest(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`
+
     const config = {
       headers: {
         "Content-Type": "application/json",
@@ -23,22 +19,21 @@ class ApiService {
     const response = await fetch(url, config)
 
     if (!response.ok) {
-      const error = await response.json()
+      const error = await response.json().catch(() => ({}))
       throw new Error(error.detail || "Request failed")
     }
 
     return response.json()
   }
 
-  // Search endpoints
-  async searchProjects(query) {
-    return this.makeRequest("/search/projects", {
+  // ---------- AI Endpoints ----------
+  async getRelevantWebsites(query) {
+    return this.makeRequest("/ai/websites", {
       method: "POST",
       body: JSON.stringify({ query }),
     })
   }
 
-  // AI endpoints
   async getProjectSuggestions(query) {
     return this.makeRequest("/ai/suggestions", {
       method: "POST",
@@ -60,35 +55,80 @@ class ApiService {
     })
   }
 
-  // File endpoints
-  async uploadFile(file, studentName, studentId, projectTitle, abstract) {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("student_name", studentName)
-    formData.append("student_id", studentId)
-    formData.append("project_title", projectTitle)
-    formData.append("abstract", abstract)
-
-    return this.makeRequest("/files/upload", {
+  // ---------- Search Endpoint ----------
+  async searchProjects(query) {
+    return this.makeRequest("/search/projects", {
       method: "POST",
-      headers: {
-        ...authService.getAuthHeaders(),
-      },
-      body: formData,
+      body: JSON.stringify({ query }),
     })
   }
 
+  // ---------- File Upload ----------
+  async uploadFile(file, title, description, student_name, student_id, abstract) {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("title", title)
+    formData.append("description", description)
+    formData.append("student_name", student_name)
+    formData.append("student_id", student_id)
+    formData.append("abstract", abstract)
+
+    const token = localStorage.getItem("access_token")
+    if (!token) {
+      throw new Error("Not authenticated: Please log in again.")
+    }
+
+    console.log("Token used for upload:", token)
+
+    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Do NOT set Content-Type for FormData; the browser does it
+      },
+      body: formData,
+    })
+
+    if (response.status === 401) {
+      // Remove invalid token if unauthorized
+      localStorage.removeItem("access_token")
+      localStorage.removeItem("user_data")
+      throw new Error("Session expired or unauthorized. Please log in again.")
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      throw new Error(error.detail || "File upload failed")
+    }
+
+    return response.json()
+  }
+
+  // ---------- Get all submissions ----------
   async getSubmissions() {
     return this.makeRequest("/files/submissions")
   }
 
-  async downloadFile(fileId) {
+  // ---------- Download file by ID or file_url ----------
+  async downloadFile(fileKey) {
     const token = localStorage.getItem("access_token")
-    const response = await fetch(`${API_BASE_URL}/files/download/${fileId}`, {
+    if (!token) throw new Error("Not authenticated. Please log in again.")
+
+    console.log("Token used for download:", token)
+
+    const response = await fetch(`${API_BASE_URL}/files/download/${fileKey}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
+
+    if (response.status === 404) {
+      throw new Error("File not found")
+    }
+
+    if (response.status === 401) {
+      throw new Error("Unauthorized. Please re-login.")
+    }
 
     if (!response.ok) {
       throw new Error("Download failed")

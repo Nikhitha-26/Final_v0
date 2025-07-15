@@ -1,4 +1,5 @@
 "use client"
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider, useAuth } from "./hooks/useAuth"
 import { ToastProvider } from "./hooks/useToast"
@@ -7,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage"
 import StudentDashboard from "./pages/StudentDashboard"
 import TeacherDashboard from "./pages/TeacherDashboard"
 import ExaminerDashboard from "./pages/ExaminerDashboard"
+import LandingPage from "./pages/LandingPage"
 import LoadingSpinner from "./components/LoadingSpinner"
 import "./App.css"
 
@@ -67,7 +69,7 @@ function AppRoutes() {
         }
       />
 
-      <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <Navigate to="/login" replace />} />
+      <Route path="/" element={user ? <Navigate to={`/${user.role}`} replace /> : <LandingPage />} />
 
       <Route
         path="/unauthorized"
